@@ -35,6 +35,7 @@ API_VERSION = 1
 LATEST_DATASET_KEYWORD = "latest"
 PROFILE_STANDARD = "standard_profile"
 PROFILE_FLOAT = "float_profile"
+PROFILE_REVERSE = "reverse_profile"
 
 
 # Util functions ##############################################################
@@ -153,6 +154,9 @@ def parse_request(data):
         req['stop_datetime'] = \
             _extract_parameter(data, "stop_datetime", _rfc3339_to_timestamp,
                                validator=lambda x: x > req['launch_datetime'])
+    elif req['profile'] == PROFILE_REVERSE:
+        req['ascent_rate'] = _extract_parameter(data, "ascent_rate", float,
+                                                validator=lambda x: x > 0)
     else:
         raise RequestException("Unknown profile '%s'." % req['profile'])
 
@@ -161,6 +165,38 @@ def parse_request(data):
                                         LATEST_DATASET_KEYWORD)
 
     return req
+
+
+def parse_request_ruaumoko(data):
+    """
+    Parse the request.
+    """
+    req = {"version": API_VERSION}
+
+    # Generic fields
+    req['latitude'] = \
+        _extract_parameter(data, "latitude", float,
+                           validator=lambda x: -90 <= x <= 90)
+    req['longitude'] = \
+        _extract_parameter(data, "longitude", float,
+                           validator=lambda x: 0 <= x < 360)
+
+    # Response dict
+    resp = {
+        "request": req,
+    }
+
+    warningcounts = WarningCounts()
+
+    try:
+        resp['altitude'] = ruaumoko_ds().get(req['latitude'],req['longitude'])
+    except Exception:
+        raise InternalException("Internal exception experienced whilst " +
+                                "querying ruaumoko.")
+    
+    resp["warnings"] = warningcounts.to_dict()
+
+    return resp
 
 
 def _extract_parameter(data, parameter, cast, default=None, ignore=False,
@@ -233,14 +269,20 @@ def run_prediction(req):
                                       req['stop_datetime'],
                                       tawhiri_ds,
                                       warningcounts)
+    elif req['profile'] == PROFILE_REVERSE:
+        # reverse_profile(ascent_rate, wind_dataset, elevation_dataset, warningcounts)
+        stages = models.reverse_profile(req['ascent_rate'],
+                                      tawhiri_ds,
+                                      ruaumoko_ds(),
+                                      warningcounts)
     else:
         raise InternalException("No implementation for known profile.")
 
     # Run solver
     try:
         result = solver.solve(req['launch_datetime'], req['launch_latitude'],
-                              req['launch_longitude'], req['launch_altitude'],
-                              stages)
+                            req['launch_longitude'], req['launch_altitude'],
+                            stages)
     except Exception as e:
         raise PredictionException("Prediction did not complete: '%s'." %
                                   str(e))
@@ -250,6 +292,8 @@ def run_prediction(req):
         resp['prediction'] = _parse_stages(["ascent", "descent"], result)
     elif req['profile'] == PROFILE_FLOAT:
         resp['prediction'] = _parse_stages(["ascent", "float"], result)
+    elif req['profile'] == PROFILE_REVERSE:
+        resp['prediction'] = _parse_stages(["ascent", "descent"], result)
     else:
         raise InternalException("No implementation for known profile.")
 
@@ -296,6 +340,19 @@ def main():
     return jsonify(response)
 
 
+@app.route('/api/ruaumoko/', methods=['GET'])
+def main_ruaumoko():
+    """
+    Single API endpoint which accepts GET requests.
+    """
+    g.request_start_time = time.time()
+    response = parse_request_ruaumoko(request.args)
+    g.request_complete_time = time.time()
+    response['metadata'] = _format_request_metadata()
+    return jsonify(response)
+
+
+
 @app.errorhandler(APIException)
 def handle_exception(error):
     """
@@ -310,6 +367,11 @@ def handle_exception(error):
     response['metadata'] = _format_request_metadata()
     return jsonify(response), error.status_code
 
+@app.after_request # blueprint can also be app~~
+def after_request(response):
+    header = response.headers
+    header['Access-Control-Allow-Origin'] = '*'
+    return response
 
 def _format_request_metadata():
     """

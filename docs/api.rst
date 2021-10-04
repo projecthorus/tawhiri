@@ -14,6 +14,7 @@ API Endpoint
 There is a single endpoint, http://predict.cusf.co.uk/api/v1/, to which ``GET``
 requests must be made with request parameters in the query string.
 
+
 Profiles
 ~~~~~~~~
 Tawhiri supports multiple flight profiles which contain a description of the
@@ -22,6 +23,7 @@ model chain to be used when predicting a specific flight type.
 Tawhiri currently supports the following profiles:
  * Standard Profile - ``standard_profile``
  * Float Profile - ``float_profile``
+ * Reverse Profile - ``reverse_profile``
 
 Standard Profile
 ^^^^^^^^^^^^^^^^
@@ -38,6 +40,15 @@ altitude to a float altitude which persists for some amount of time before
 stopping. Descent is not predicted when using this profile.
 
 The API refers to this profile as ``float_profile``.
+
+Reverse Profile
+^^^^^^^^^^^^^
+A profile for back-tracking the path of a balloon in flight, to estimate the
+launch site. This profile requires a known position (lat, lon, altitude) of
+the flight be provided (as launch latitude / longitude / altitude), along with
+a time and an ascent rate.
+
+The API refers to this profile as ``reverse_profile``.
 
 Requests
 ~~~~~~~~

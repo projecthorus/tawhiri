@@ -90,6 +90,27 @@ def make_wind_velocity(dataset, warningcounts):
     return wind_velocity
 
 
+def make_reverse_wind_velocity(dataset, warningcounts):
+    """Return a reverse wind-velocity model, which gives reverse lateral movement at
+       the wind velocity for the current time, latitude, longitude and
+       altitude. The `dataset` argument is the wind dataset in use.
+       This allows working estimation of a radiosonde's launch site.
+    """
+    get_wind = interpolate.make_interpolator(dataset, warningcounts)
+    dataset_epoch = calendar.timegm(dataset.ds_time.timetuple())
+    def wind_velocity(t, lat, lng, alt):
+        t -= dataset_epoch
+        u, v = get_wind(t / 3600.0, lat, lng, alt)
+        # Reverse the sign of the u & v wind components
+        u = -1 * u
+        v = -1 * v
+        R = 6371009 + alt
+        dlat = _180_PI * v / R
+        dlng = _180_PI * u / (R * math.cos(lat * _PI_180))
+        return dlat, dlng, 0.0
+    return wind_velocity
+
+
 ## Termination Criteria #######################################################
 
 
@@ -129,6 +150,12 @@ def make_time_termination(max_time):
         if t > max_time:
             return True
     return time_termination
+
+def make_dummy_termination():
+    """A dummy termination criteria, which immediately terminates """
+    def dum(t, lat, lng, alt):
+        return True
+    return dum
 
 
 ## Model Combinations #########################################################
@@ -195,3 +222,26 @@ def float_profile(ascent_rate, float_altitude, stop_time, dataset, warningcounts
     term_float = make_time_termination(stop_time)
 
     return ((model_up, term_up), (model_float, term_float))
+
+
+def reverse_profile(ascent_rate, wind_dataset, elevation_dataset, warningcounts):
+    """Make a model chain used to estimate a balloon's launch site location, based on
+       the current position, and a known ascent rate. This model only works for a balloon
+       on ascent.
+
+       Requires the balloon `ascent_rate`,
+       and additionally requires the dataset to use for wind velocities.
+
+       Returns a tuple of (model, terminator) pairs.
+    """
+
+    model_up = make_linear_model([make_constant_ascent(ascent_rate),
+                                  make_reverse_wind_velocity(wind_dataset, warningcounts)])
+
+    term_up = make_dummy_termination()
+
+    model_down = make_linear_model([make_constant_ascent(-1*abs(ascent_rate)),
+                                    make_reverse_wind_velocity(wind_dataset, warningcounts)])
+    term_down = make_elevation_data_termination(elevation_dataset)
+
+    return ((model_up, term_up), (model_down, term_down))

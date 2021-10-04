@@ -21,14 +21,14 @@
 Perform numerical integration of the balloon state.
 """
 
-def solve(t, lat, lng, alt, chain):
+def solve(t, lat, lng, alt, chain, dt=60.0):
     """Solve from initial conditions `t`, `lat`, `lng`, and `alt`, using
        models and termination criteria from `chain`, an iterable of (model,
        terminator) pairs which make up each stage of the flight.
     """
     results = []
     for model, terminator in chain:
-        stage = rk4(t, lat, lng, alt, model, terminator)
+        stage = rk4(t, lat, lng, alt, model, terminator, dt)
         results.append(stage)
         t, lat, lng, alt = stage[-1]
     return results
