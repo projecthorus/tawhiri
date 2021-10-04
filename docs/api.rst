@@ -46,7 +46,8 @@ Reverse Profile
 A profile for back-tracking the path of a balloon in flight, to estimate the
 launch site. This profile requires a known position (lat, lon, altitude) of
 the flight be provided (as launch latitude / longitude / altitude), along with
-a time and an ascent rate.
+a time and an ascent rate. The time provided should be the time the balloon was
+at the provided position - Tawhiri will esimate the launch time.
 
 The API refers to this profile as ``reverse_profile``.
 
@@ -250,6 +251,20 @@ Example:
      "complete_datetime": "2014-08-19T21:32:52.036925Z",
      "start_datetime": "2014-08-19T21:32:51.929028Z"
    }
+
+Launch Estimate Fragment
+^^^^^^^^^^^^^^^^^^^^^^^^
+For reverse_profile predictions, the estimated launch site and launch time is
+included as a fragment, for easy access.
+
+.. code-block:: json
+
+    "launch_estimate": {
+      "datetime": "2021-10-03T23:14:26Z",
+      "latitude": -34.95080634777029,
+      "longitude": 138.51215389728895
+    }
+
 
 Error Fragment
 ^^^^^^^^^^^^^^

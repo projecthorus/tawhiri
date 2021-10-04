@@ -271,6 +271,14 @@ def run_prediction(req):
                                       warningcounts)
     elif req['profile'] == PROFILE_REVERSE:
         # reverse_profile(ascent_rate, wind_dataset, elevation_dataset, warningcounts)
+        # Estimate the launch time 
+        if(req['launch_altitude'] > 0):
+            # Sonde in air, estimate flight time
+            _flight_time = req['launch_altitude']/req['ascent_rate']
+            # ... and subtract this from the datapoint time, to estimate launch time.
+            req['launch_datetime'] = req['launch_datetime'] - _flight_time
+
+
         stages = models.reverse_profile(req['ascent_rate'],
                                       tawhiri_ds,
                                       ruaumoko_ds(),
@@ -294,6 +302,14 @@ def run_prediction(req):
         resp['prediction'] = _parse_stages(["ascent", "float"], result)
     elif req['profile'] == PROFILE_REVERSE:
         resp['prediction'] = _parse_stages(["ascent", "descent"], result)
+        # Extract the last entry as our launch site estimate.
+        _launch_site = resp['prediction'][-1]['trajectory'][-1]
+        resp['launch_estimate'] = {
+            'latitude': _launch_site['latitude'], 
+            'longitude': _launch_site['longitude'],
+            'datetime': _timestamp_to_rfc3339(req['launch_datetime'])
+        }
+
     else:
         raise InternalException("No implementation for known profile.")
 
@@ -367,11 +383,14 @@ def handle_exception(error):
     response['metadata'] = _format_request_metadata()
     return jsonify(response), error.status_code
 
-@app.after_request # blueprint can also be app~~
-def after_request(response):
-    header = response.headers
-    header['Access-Control-Allow-Origin'] = '*'
-    return response
+
+# Uncomment for local testing
+# @app.after_request # blueprint can also be app~~
+# def after_request(response):
+#     header = response.headers
+#     header['Access-Control-Allow-Origin'] = '*'
+#     return response
+
 
 def _format_request_metadata():
     """
