@@ -260,6 +260,7 @@ included as a fragment, for easy access.
 .. code-block:: json
 
     "launch_estimate": {
+      "altitude": 3.75,
       "datetime": "2021-10-03T23:14:26Z",
       "latitude": -34.95080634777029,
       "longitude": 138.51215389728895

@@ -307,6 +307,7 @@ def run_prediction(req):
         resp['launch_estimate'] = {
             'latitude': _launch_site['latitude'], 
             'longitude': _launch_site['longitude'],
+            'altitude': _launch_site['altitude'],
             'datetime': _timestamp_to_rfc3339(req['launch_datetime'])
         }
 
@@ -385,11 +386,11 @@ def handle_exception(error):
 
 
 # Uncomment for local testing
-# @app.after_request # blueprint can also be app~~
-# def after_request(response):
-#     header = response.headers
-#     header['Access-Control-Allow-Origin'] = '*'
-#     return response
+@app.after_request # blueprint can also be app~~
+def after_request(response):
+    header = response.headers
+    header['Access-Control-Allow-Origin'] = '*'
+    return response
 
 
 def _format_request_metadata():
