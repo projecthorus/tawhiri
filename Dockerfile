@@ -36,6 +36,7 @@ RUN apt-get update && \
   rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /root/.local /root/.local
+COPY --from=build /root/tawhiri /root/tawhiri
 
 RUN rm /etc/ImageMagick-6/policy.xml && \
   mkdir -p /run/tawhiri
