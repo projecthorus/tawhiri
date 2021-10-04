@@ -386,11 +386,11 @@ def handle_exception(error):
 
 
 # Uncomment for local testing
-@app.after_request # blueprint can also be app~~
-def after_request(response):
-    header = response.headers
-    header['Access-Control-Allow-Origin'] = '*'
-    return response
+# @app.after_request # blueprint can also be app~~
+# def after_request(response):
+#     header = response.headers
+#     header['Access-Control-Allow-Origin'] = '*'
+#     return response
 
 
 def _format_request_metadata():
