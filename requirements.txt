@@ -5,5 +5,9 @@ Cython
 sphinx
 docutils
 
+# Flask - pinned
+flask==1.1.4
+Jinja2==2.11.3
+
 # Ourselves
 -e .
