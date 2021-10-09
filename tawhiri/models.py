@@ -236,12 +236,12 @@ def reverse_profile(ascent_rate, wind_dataset, elevation_dataset, warningcounts)
     """
 
     model_up = make_linear_model([make_constant_ascent(ascent_rate),
-                                  make_reverse_wind_velocity(wind_dataset, warningcounts)])
+                                  make_wind_velocity(wind_dataset, warningcounts)])
 
     term_up = make_dummy_termination()
 
-    model_down = make_linear_model([make_constant_ascent(-1*abs(ascent_rate)),
-                                    make_reverse_wind_velocity(wind_dataset, warningcounts)])
+    model_down = make_linear_model([make_constant_ascent(abs(ascent_rate)),
+                                    make_wind_velocity(wind_dataset, warningcounts)])
     term_down = make_elevation_data_termination(elevation_dataset)
 
     return ((model_up, term_up), (model_down, term_down))

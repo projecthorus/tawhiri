@@ -270,15 +270,6 @@ def run_prediction(req):
                                       tawhiri_ds,
                                       warningcounts)
     elif req['profile'] == PROFILE_REVERSE:
-        # reverse_profile(ascent_rate, wind_dataset, elevation_dataset, warningcounts)
-        # Estimate the launch time 
-        if(req['launch_altitude'] > 0):
-            # Sonde in air, estimate flight time
-            _flight_time = req['launch_altitude']/req['ascent_rate']
-            # ... and subtract this from the datapoint time, to estimate launch time.
-            req['launch_datetime'] = req['launch_datetime'] - _flight_time
-
-
         stages = models.reverse_profile(req['ascent_rate'],
                                       tawhiri_ds,
                                       ruaumoko_ds(),
@@ -288,9 +279,16 @@ def run_prediction(req):
 
     # Run solver
     try:
-        result = solver.solve(req['launch_datetime'], req['launch_latitude'],
-                            req['launch_longitude'], req['launch_altitude'],
-                            stages)
+        if req['profile'] == PROFILE_REVERSE:
+            # For the reverse prediction we simply set the time-step to be negative!
+            result = solver.solve(req['launch_datetime'], req['launch_latitude'],
+                                req['launch_longitude'], req['launch_altitude'],
+                                stages, dt=-60.0)
+        else:
+            result = solver.solve(req['launch_datetime'], req['launch_latitude'],
+                                req['launch_longitude'], req['launch_altitude'],
+                                stages)
+
     except Exception as e:
         raise PredictionException("Prediction did not complete: '%s'." %
                                   str(e))
