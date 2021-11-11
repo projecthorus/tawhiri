@@ -1,6 +1,10 @@
 # Required for setup.py
 Cython
 
+# gnuicorn tools
+eventlet
+gevent
+
 # Documentation
 sphinx
 docutils
