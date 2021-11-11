@@ -198,6 +198,38 @@ def parse_request_ruaumoko(data):
 
     return resp
 
+def parse_request_datasetcheck(data):
+    """
+    Dataset Check Request - try and find a dataset, any dataset, and return its info is there is one.
+    """
+    req = {"version": API_VERSION}
+
+    # Response dict
+    resp = {
+        "request": req,
+    }
+
+    warningcounts = WarningCounts()
+
+    # Find wind data location
+    ds_dir = app.config.get('WIND_DATASET_DIR', WindDataset.DEFAULT_DIRECTORY)
+
+    # Dataset
+    try:
+        tawhiri_ds = WindDataset.open_latest(persistent=True, directory=ds_dir)
+        # Note that hours and minutes are set to 00 as Tawhiri uses hourly datasets
+        resp['request']['dataset'] = \
+            tawhiri_ds.ds_time.strftime("%Y-%m-%dT%H:00:00Z")
+    except IOError:
+        raise InvalidDatasetException("No matching dataset found.")
+    except ValueError as e:
+        raise InvalidDatasetException("Could not find any dataset.")
+    except Exception as e:
+        raise InvalidDatasetException("Could not find any dataset.")
+    
+    resp["warnings"] = warningcounts.to_dict()
+
+    return resp
 
 def _extract_parameter(data, parameter, cast, default=None, ignore=False,
                        validator=None):
@@ -358,7 +390,7 @@ def main():
 @app.route('/api/ruaumoko/', methods=['GET'])
 def main_ruaumoko():
     """
-    Single API endpoint which accepts GET requests.
+    Ruaumoko endpoint
     """
     g.request_start_time = time.time()
     response = parse_request_ruaumoko(request.args)
@@ -366,6 +398,16 @@ def main_ruaumoko():
     response['metadata'] = _format_request_metadata()
     return jsonify(response)
 
+@app.route('/api/datasetcheck', methods=['GET'])
+def main_datasetcheck():
+    """
+    Dataset Check Endpoint
+    """
+    g.request_start_time = time.time()
+    response = parse_request_datasetcheck(request.args)
+    g.request_complete_time = time.time()
+    response['metadata'] = _format_request_metadata()
+    return jsonify(response)
 
 
 @app.errorhandler(APIException)
