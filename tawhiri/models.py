@@ -139,7 +139,7 @@ def make_elevation_data_termination(dataset=None):
        in `dataset` (which should be a ruaumoko.Dataset).
     """
     def tc(t, lat, lng, alt):
-        return dataset.get(lat, lng) > alt
+        return (dataset.get(lat, lng) > alt) or (alt <= 0)
     return tc
 
 def make_time_termination(max_time):
