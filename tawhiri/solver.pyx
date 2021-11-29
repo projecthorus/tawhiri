@@ -148,6 +148,7 @@ def rk4(double t, double lat, double lng, double alt,
         y = y2
 
         result.append((t, y.lat, y.lng, y.alt))
+        print(str((t, y.lat, y.lng, y.alt)))
 
     # ... and binary search to find a point (t3, y3) between
     # (t, y) and (t2, y2) close to where the terminator becomes true
