@@ -89,6 +89,10 @@ addition, each profile accepts various additional parameters.
      - optional
      - Defaults to elevation at launch location looked up using Ruaumoko_.
      - Elevation of launch location in metres above sea level.
+   * - ``format``
+     - optional
+     - ``json``
+     - Output format of data. Defaults to ``json``, but can be ``kml`` and ``csv``.
 
 Standard Profile
 ^^^^^^^^^^^^^^^^
@@ -148,12 +152,16 @@ general parameters above.
 
 Responses
 ~~~~~~~~~
-Responses are returned in JSON and consist of various fragments. Successful
+Responses are returned in JSON by default and consist of various fragments. Successful
 responses contain ``request``, ``prediction`` and ``metadata`` fragments.
 Error responses contain ``error`` and ``metadata`` fragments only.
 
 The predictor API returns HTTP Status Code ``200 OK`` for all successful
 predictions.
+
+If the requested ``format`` was ``kml`` or ``csv``, then that format will be 
+returned from the API, with HTTP headers set to indicate an attachment, with an
+appropriate filename.
 
 Request Fragment
 ^^^^^^^^^^^^^^^^
