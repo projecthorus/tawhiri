@@ -14,6 +14,8 @@ API Endpoint
 There is a single endpoint, http://predict.cusf.co.uk/api/v1/, to which ``GET``
 requests must be made with request parameters in the query string.
 
+The SondeHub hosted version of this API is available at: https://api.v2.sondehub.org/tawhiri
+
 
 Profiles
 ~~~~~~~~

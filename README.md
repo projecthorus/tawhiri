@@ -14,6 +14,13 @@ god of weather, which rather aptly
 &ldquo;drove Tangaroa and his progeny into the sea &rdquo;
 [(WP)](http://en.wikipedia.org/wiki/Tawhiri).
 
+This repository is a fork of the original [CUSF repository](https://github.com/cuspaceflight/tawhiri) with the following additions:
+* Docker container build scripts.
+* Addition of 'reverse profile' predictions, allowing estimation of balloon launch sites.
+* Addition of KML and CSV formatted responses.
+
+An instance of this predictor is used within the [SondeHub](https://sondehub.org) Radiosonde and Amateur balloon tracking database and mapping system, with the main API available at: https://api.v2.sondehub.org/tawhiri
+
 ## More information
 
 Please see the [CUSF wiki](http://www.cusf.co.uk/wiki/), which contains pages
@@ -26,7 +33,7 @@ general](http://www.cusf.co.uk/wiki/landing_predictor).
 
 ### Predictor
 
-…is written for Python 3, is compatible with Python 2, and needs Cython:
+…is written for Python 3 (>3.6, due to the use of f-strings) and needs Cython:
 
 ```bash
 $ virtualenv venv
@@ -44,6 +51,8 @@ after modifying any `.pyx` files.
 The downloader was written before Python had good cooperative concurrency
 support, and so is instead a [separate
 application](https://github.com/cuspaceflight/tawhiri-downloader) in OCaml.
+
+A containerised version of tawhiri-downloader is available here: https://github.com/projecthorus/tawhiri-downloader-container/
 
 ## License
 
