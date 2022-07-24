@@ -19,14 +19,17 @@
 Provide the HTTP API for Tawhiri.
 """
 
-from flask import Flask, jsonify, request, g
+from flask import Flask, jsonify, request, g, send_file
 from datetime import datetime
 import time
 import strict_rfc3339
+from io import BytesIO
 
 from tawhiri import solver, models
 from tawhiri.dataset import Dataset as WindDataset
 from tawhiri.warnings import WarningCounts
+from tawhiri.csvformatter import format_csv, fix_data_longitudes
+from tawhiri.kmlformatter import format_kml
 from ruaumoko import Dataset as ElevationDataset
 
 app = Flask(__name__)
@@ -36,6 +39,7 @@ LATEST_DATASET_KEYWORD = "latest"
 PROFILE_STANDARD = "standard_profile"
 PROFILE_FLOAT = "float_profile"
 PROFILE_REVERSE = "reverse_profile"
+STANDARD_FORMAT = "json"
 
 
 # Util functions ##############################################################
@@ -122,14 +126,19 @@ def parse_request(data):
     req['launch_altitude'] = \
         _extract_parameter(data, "launch_altitude", float, ignore=True)
 
+    req['format'] = \
+        _extract_parameter(data, "format", str, STANDARD_FORMAT)
+
     # If no launch altitude provided, use Ruaumoko to look it up
     if req['launch_altitude'] is None:
         try:
             req['launch_altitude'] = ruaumoko_ds().get(req['launch_latitude'],
                                                        req['launch_longitude'])
         except Exception:
-            raise InternalException("Internal exception experienced whilst " +
-                                    "looking up 'launch_altitude'.")
+            # Cannot query Ruaumoko - just set launch altitude to 0.
+            req['launch_altitude'] = 0.0
+            # raise InternalException("Internal exception experienced whilst " +
+            #                         "looking up 'launch_altitude'.")
 
     # Prediction profile
     req['profile'] = _extract_parameter(data, "profile", str,
@@ -384,7 +393,30 @@ def main():
     response = run_prediction(parse_request(request.args))
     g.request_complete_time = time.time()
     response['metadata'] = _format_request_metadata()
-    return jsonify(response)
+
+    # Format the result data as per the users request
+    if response["request"]["format"] == "csv":
+        _formatted = format_csv(fix_data_longitudes(response))
+        return send_file(
+            BytesIO(_formatted['data'].encode()),
+            mimetype="text/csv",
+            as_attachment=True,
+            attachment_filename=_formatted['filename']
+        )
+
+    elif response["request"]["format"] == "kml":
+        _formatted = format_kml(fix_data_longitudes(response))
+        return send_file(
+            BytesIO(_formatted['data'].encode()),
+            as_attachment=True,
+            attachment_filename=_formatted['filename']
+        )
+
+    elif response["request"]["format"] == "json":
+        return jsonify(response)
+    else:
+        raise InternalException("Format not supported: " + response["request"]["format"])
+
 
 
 @app.route('/api/ruaumoko/', methods=['GET'])
