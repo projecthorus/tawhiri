@@ -19,7 +19,11 @@ This repository is a fork of the original [CUSF repository](https://github.com/c
 * Addition of 'reverse profile' predictions, allowing estimation of balloon launch sites.
 * Addition of KML and CSV formatted responses.
 
-An instance of this predictor is used within the [SondeHub](https://sondehub.org) Radiosonde and Amateur balloon tracking database and mapping system, with the main API available at: https://api.v2.sondehub.org/tawhiri
+### SondeHub Tawhiri Instance
+An instance of this predictor is used within the [SondeHub](https://sondehub.org) Radiosonde and Amateur balloon tracking database and mapping system, with the main API URL available at: https://api.v2.sondehub.org/tawhiri  (e.g. replace http://predict.cusf.co.uk/api/v1/ in the CUSF [API documentation](https://tawhiri.readthedocs.io/en/latest/api.html) with https://api.v2.sondehub.org/tawhiri)
+
+Please note this API is intended for use by the SondeHub and SondeHub-Amateur tracker websites, for other internal SondeHub use, and limited use by other amateur high-altitude-ballooning applications (e.g. ChaseMapper). If you intend to use this API heavily, or in a commercial setting, please [contact us](https://github.com/projecthorus/sondehub-infra/wiki#contacts) to discuss options. Heavy use of this API may result in it rate limiting or IP blocks. 
+
 
 ## More information
 
@@ -45,6 +49,10 @@ $ python setup.py build_ext --inplace
 The last line (re-)builds the Cython extensions, and needs to be run again
 after modifying any `.pyx` files.
 
+Run with:
+```bash
+$ tawhiri-webapp runserver
+```
 
 ### Downloader
 
@@ -52,7 +60,7 @@ The downloader was written before Python had good cooperative concurrency
 support, and so is instead a [separate
 application](https://github.com/cuspaceflight/tawhiri-downloader) in OCaml.
 
-A containerised version of tawhiri-downloader is available here: https://github.com/projecthorus/tawhiri-downloader-container/
+A containerised version of tawhiri-downloader, intended for use within the [SondeHub system](https://github.com/projecthorus/sondehub-infra/wiki) is available here: https://github.com/projecthorus/tawhiri-downloader-container/
 
 ## License
 
