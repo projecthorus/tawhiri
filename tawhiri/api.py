@@ -107,6 +107,19 @@ class NotYetImplementedException(APIException):
     status_code = 501
 
 
+def rate_clip(rate, minimum_rate=0.2):
+    """
+    Lower-bound clipping for ascent and descent rates
+    """
+
+    if rate < minimum_rate:
+        return minimum_rate
+    else:
+        return rate
+
+
+
+
 # Request #####################################################################
 def parse_request(data):
     """
@@ -147,16 +160,16 @@ def parse_request(data):
     launch_alt = req["launch_altitude"]
 
     if req['profile'] == PROFILE_STANDARD:
-        req['ascent_rate'] = _extract_parameter(data, "ascent_rate", float,
-                                                validator=lambda x: x > 0)
+        req['ascent_rate'] = rate_clip(_extract_parameter(data, "ascent_rate", float,
+                                                validator=lambda x: x > 0))
         req['burst_altitude'] = \
             _extract_parameter(data, "burst_altitude", float,
                                validator=lambda x: x > launch_alt)
-        req['descent_rate'] = _extract_parameter(data, "descent_rate", float,
-                                                 validator=lambda x: x > 0)
+        req['descent_rate'] = rate_clip(_extract_parameter(data, "descent_rate", float,
+                                                 validator=lambda x: x > 0))
     elif req['profile'] == PROFILE_FLOAT:
-        req['ascent_rate'] = _extract_parameter(data, "ascent_rate", float,
-                                                validator=lambda x: x > 0)
+        req['ascent_rate'] = rate_clip(_extract_parameter(data, "ascent_rate", float,
+                                                validator=lambda x: x > 0))
         req['float_altitude'] = \
             _extract_parameter(data, "float_altitude", float,
                                validator=lambda x: x > launch_alt)
@@ -164,8 +177,8 @@ def parse_request(data):
             _extract_parameter(data, "stop_datetime", _rfc3339_to_timestamp,
                                validator=lambda x: x > req['launch_datetime'])
     elif req['profile'] == PROFILE_REVERSE:
-        req['ascent_rate'] = _extract_parameter(data, "ascent_rate", float,
-                                                validator=lambda x: x > 0)
+        req['ascent_rate'] = rate_clip(_extract_parameter(data, "ascent_rate", float,
+                                                validator=lambda x: x > 0))
     else:
         raise RequestException("Unknown profile '%s'." % req['profile'])
 
