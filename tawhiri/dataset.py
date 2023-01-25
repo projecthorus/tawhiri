@@ -37,6 +37,7 @@ import signal
 import operator
 from datetime import datetime
 import logging
+import newrelic.agent
 
 logger = logging.getLogger("tawhiri.dataset")
 
@@ -117,6 +118,7 @@ class Dataset(object):
     DEFAULT_DIRECTORY = '/srv/tawhiri-datasets'
 
     @classmethod
+    @newrelic.agent.function_trace()
     def filename(cls, ds_time, directory=DEFAULT_DIRECTORY, suffix=''):
         """
         Returns the filename under which we expect to find a dataset
@@ -136,6 +138,7 @@ class Dataset(object):
         return os.path.join(directory, ds_time_str + suffix)
 
     @classmethod
+    @newrelic.agent.function_trace()
     def listdir(cls, directory=DEFAULT_DIRECTORY, only_suffices=None):
         """
         Scan for datasets in `directory`
@@ -173,10 +176,12 @@ class Dataset(object):
     # prune_latest is registered as the signal handler for SIGALRM at the
     # bottom of the file.
     @classmethod
+    @newrelic.agent.function_trace()
     def prune_latest(cls, signum, stack_frame):
         cls.cached_latest = None
 
     @classmethod
+    @newrelic.agent.function_trace()
     def open_latest(cls, directory=DEFAULT_DIRECTORY, persistent=False):
         """
         Find the most recent datset in `directory`, and open it
@@ -213,6 +218,7 @@ class Dataset(object):
 
             return ds
 
+    @newrelic.agent.function_trace()
     def __init__(self, ds_time, directory=DEFAULT_DIRECTORY, new=False):
         """
         Open the dataset file for `ds_time`, in `directory`
@@ -260,9 +266,11 @@ class Dataset(object):
 
             self.array = mmap.mmap(f.fileno(), 0, prot=prot, flags=flags)
 
+    @newrelic.agent.function_trace()
     def __del__(self):
         self.close()
 
+    @newrelic.agent.function_trace()
     def close(self):
         """
         Close the dataset

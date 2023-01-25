@@ -15,7 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with Tawhiri.  If not, see <http://www.gnu.org/licenses/>.
 from dateutil.parser import parse
+import newrelic.agent
 
+@newrelic.agent.function_trace()
 def format_kml(data):
     """ Format a Tawhiri prediction as KML """
 

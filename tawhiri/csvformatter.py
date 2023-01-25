@@ -15,7 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with Tawhiri.  If not, see <http://www.gnu.org/licenses/>.
 from dateutil.parser import parse
+import newrelic.agent
 
+@newrelic.agent.function_trace()
 def fix_data_longitudes(data):
     """ Fix all the longitudes in the prediction trajectory to -180 to 180. """
     for stage in data["prediction"]:
@@ -25,6 +27,7 @@ def fix_data_longitudes(data):
 
     return data
 
+@newrelic.agent.function_trace()
 def format_csv(data):
     """ Format a Tawhiri prediction as CSV """
 
