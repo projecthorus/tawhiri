@@ -337,13 +337,14 @@ def run_prediction(req):
 
     # Run solver
     try:
+        profile_solve = newrelic.agent.ProfileTraceWrapper(solver.solve)
         if req['profile'] == PROFILE_REVERSE:
             # For the reverse prediction we simply set the time-step to be negative!
-            result = solver.solve(req['launch_datetime'], req['launch_latitude'],
+            result = profile_solve(req['launch_datetime'], req['launch_latitude'],
                                 req['launch_longitude'], req['launch_altitude'],
                                 stages, dt=-60.0)
         else:
-            result = solver.solve(req['launch_datetime'], req['launch_latitude'],
+            result = profile_solve(req['launch_datetime'], req['launch_latitude'],
                                 req['launch_longitude'], req['launch_altitude'],
                                 stages)
 
@@ -406,6 +407,7 @@ def main():
     """
     Single API endpoint which accepts GET requests.
     """
+    newrelic.agent.capture_request_params()
     g.request_start_time = time.time()
     response = run_prediction(parse_request(request.args))
     g.request_complete_time = time.time()
