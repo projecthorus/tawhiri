@@ -339,10 +339,6 @@ def run_prediction(req):
             result = solver.solve(req['launch_datetime'], req['launch_latitude'],
                                 req['launch_longitude'], req['launch_altitude'],
                                 stages)
-        elif req['profile'] == PROFILE_FLOAT:
-            result = solver.solve(req['launch_datetime'], req['launch_latitude'],
-                                req['launch_longitude'], req['launch_altitude'],
-                                stages)
         else:
             result = solver.solve(req['launch_datetime'], req['launch_latitude'],
                                 req['launch_longitude'], req['launch_altitude'],
