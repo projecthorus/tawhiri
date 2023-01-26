@@ -27,8 +27,8 @@ def solve(t, lat, lng, alt, chain, dt=60.0):
        terminator) pairs which make up each stage of the flight.
     """
     results = []
-    for model, terminator in chain:
-        stage = rk4(t, lat, lng, alt, model, terminator, dt)
+    for model, terminator, timestep in chain:
+        stage = rk4(t, lat, lng, alt, model, terminator, timestep)
         results.append(stage)
         t, lat, lng, alt = stage[-1]
     return results
