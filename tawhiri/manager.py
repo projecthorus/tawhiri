@@ -19,6 +19,7 @@ Command-line manager for API webapp
 
 """
 import os
+import newrelic.agent
 from flask import send_file, send_from_directory, redirect, url_for
 # Change import to work with flask 1.1.4
 #from flask.ext.script import Manager

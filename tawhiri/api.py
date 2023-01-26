@@ -31,7 +31,7 @@ from tawhiri.warnings import WarningCounts
 from tawhiri.csvformatter import format_csv, fix_data_longitudes
 from tawhiri.kmlformatter import format_kml
 from ruaumoko import Dataset as ElevationDataset
-
+import newrelic.agent
 app = Flask(__name__)
 
 API_VERSION = 1
@@ -43,6 +43,7 @@ STANDARD_FORMAT = "json"
 
 
 # Util functions ##############################################################
+@newrelic.agent.function_trace()
 def ruaumoko_ds():
     if not hasattr("ruaumoko_ds", "once"):
         ds_loc = app.config.get('ELEVATION_DATASET', ElevationDataset.default_location)
@@ -50,13 +51,14 @@ def ruaumoko_ds():
 
     return ruaumoko_ds.once
 
+@newrelic.agent.function_trace()
 def _rfc3339_to_timestamp(dt):
     """
     Convert from a RFC3339 timestamp to a UNIX timestamp.
     """
     return strict_rfc3339.rfc3339_to_timestamp(dt)
 
-
+@newrelic.agent.function_trace()
 def _timestamp_to_rfc3339(dt):
     """
     Convert from a UNIX timestamp to a RFC3339 timestamp.
@@ -121,6 +123,7 @@ def rate_clip(rate, minimum_rate=0.2):
 
 
 # Request #####################################################################
+@newrelic.agent.function_trace()
 def parse_request(data):
     """
     Parse the request.
@@ -189,7 +192,7 @@ def parse_request(data):
 
     return req
 
-
+@newrelic.agent.function_trace()
 def parse_request_ruaumoko(data):
     """
     Parse the request.
@@ -253,7 +256,7 @@ def parse_request_datasetcheck(data):
     resp["warnings"] = warningcounts.to_dict()
 
     return resp
-
+@newrelic.agent.function_trace()
 def _extract_parameter(data, parameter, cast, default=None, ignore=False,
                        validator=None):
     """
@@ -280,6 +283,7 @@ def _extract_parameter(data, parameter, cast, default=None, ignore=False,
 
 
 # Response ####################################################################
+@newrelic.agent.function_trace()
 def run_prediction(req):
     """
     Run the prediction.
@@ -334,13 +338,14 @@ def run_prediction(req):
 
     # Run solver
     try:
+        profile_solve = newrelic.agent.ProfileTraceWrapper(solver.solve)
         if req['profile'] == PROFILE_REVERSE:
             # For the reverse prediction we simply set the time-step to be negative!
-            result = solver.solve(req['launch_datetime'], req['launch_latitude'],
+            result = profile_solve(req['launch_datetime'], req['launch_latitude'],
                                 req['launch_longitude'], req['launch_altitude'],
                                 stages)
         else:
-            result = solver.solve(req['launch_datetime'], req['launch_latitude'],
+            result = profile_solve(req['launch_datetime'], req['launch_latitude'],
                                 req['launch_longitude'], req['launch_altitude'],
                                 stages)
 
@@ -376,7 +381,7 @@ def run_prediction(req):
 
     return resp
 
-
+@newrelic.agent.function_trace()
 def _parse_stages(labels, data):
     """
     Parse the predictor output for a set of stages.
@@ -403,6 +408,7 @@ def main():
     """
     Single API endpoint which accepts GET requests.
     """
+    newrelic.agent.capture_request_params()
     g.request_start_time = time.time()
     response = run_prediction(parse_request(request.args))
     g.request_complete_time = time.time()
@@ -478,7 +484,7 @@ def handle_exception(error):
 #     header['Access-Control-Allow-Origin'] = '*'
 #     return response
 
-
+@newrelic.agent.function_trace()
 def _format_request_metadata():
     """
     Format the request metadata for inclusion in the response.

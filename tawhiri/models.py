@@ -25,6 +25,7 @@ import math
 
 from . import interpolate
 
+import newrelic.agent
 
 _PI_180 = math.pi / 180.0
 _180_PI = 180.0 / math.pi
@@ -32,14 +33,14 @@ _180_PI = 180.0 / math.pi
 
 ## Up/Down Models #############################################################
 
-
+@newrelic.agent.function_trace()
 def make_constant_ascent(ascent_rate):
     """Return a constant-ascent model at `ascent_rate` (m/s)"""
     def constant_ascent(t, lat, lng, alt):
         return 0.0, 0.0, ascent_rate
     return constant_ascent
 
-
+@newrelic.agent.function_trace()
 def make_drag_descent(sea_level_descent_rate):
     """Return a descent-under-parachute model with sea level descent
        `sea_level_descent_rate` (m/s). Descent rate at altitude is determined
@@ -72,7 +73,7 @@ def make_drag_descent(sea_level_descent_rate):
 
 ## Sideways Models ############################################################
 
-
+@newrelic.agent.function_trace()
 def make_wind_velocity(dataset, warningcounts):
     """Return a wind-velocity model, which gives lateral movement at
        the wind velocity for the current time, latitude, longitude and
@@ -89,7 +90,7 @@ def make_wind_velocity(dataset, warningcounts):
         return dlat, dlng, 0.0
     return wind_velocity
 
-
+@newrelic.agent.function_trace()
 def make_reverse_wind_velocity(dataset, warningcounts):
     """Return a reverse wind-velocity model, which gives reverse lateral movement at
        the wind velocity for the current time, latitude, longitude and
@@ -113,7 +114,7 @@ def make_reverse_wind_velocity(dataset, warningcounts):
 
 ## Termination Criteria #######################################################
 
-
+@newrelic.agent.function_trace()
 def make_burst_termination(burst_altitude):
     """Return a burst-termination criteria, which terminates integration
        when the altitude reaches `burst_altitude`.
@@ -123,7 +124,7 @@ def make_burst_termination(burst_altitude):
             return True
     return burst_termination
 
-
+@newrelic.agent.function_trace()
 def sea_level_termination(t, lat, lng, alt):
     """A termination criteria which terminates integration when
        the altitude is less than (or equal to) zero.
@@ -132,7 +133,7 @@ def sea_level_termination(t, lat, lng, alt):
     """
     if alt <= 0:
         return True
-
+@newrelic.agent.function_trace()
 def make_elevation_data_termination(dataset=None):
     """A termination criteria which terminates integration when the
        altitude goes below ground level, using the elevation data
@@ -148,7 +149,7 @@ def make_elevation_data_termination(dataset=None):
         
         return (_gnd_level > alt) or (alt <= 0)
     return tc
-
+@newrelic.agent.function_trace()
 def make_time_termination(max_time):
     """A time based termination criteria, which terminates integration when
        the current time is greater than `max_time` (a UNIX timestamp).
@@ -157,7 +158,7 @@ def make_time_termination(max_time):
         if t > max_time:
             return True
     return time_termination
-
+@newrelic.agent.function_trace()
 def make_dummy_termination():
     """A dummy termination criteria, which immediately terminates """
     def dum(t, lat, lng, alt):
@@ -167,7 +168,7 @@ def make_dummy_termination():
 
 ## Model Combinations #########################################################
 
-
+@newrelic.agent.function_trace()
 def make_linear_model(models):
     """Return a model that returns the sum of all the models in `models`.
     """
@@ -179,7 +180,7 @@ def make_linear_model(models):
         return dlat, dlng, dalt
     return linear_model
 
-
+@newrelic.agent.function_trace()
 def make_any_terminator(terminators):
     """Return a terminator that terminates when any of `terminators` would
        terminate.
@@ -191,7 +192,7 @@ def make_any_terminator(terminators):
 
 ## Pre-Defined Profiles #######################################################
 
-
+@newrelic.agent.function_trace()
 def standard_profile(ascent_rate, burst_altitude, descent_rate,
                      wind_dataset, elevation_dataset, warningcounts, dt=60.0):
     """Make a model chain for the standard high altitude balloon situation of
@@ -220,6 +221,7 @@ def standard_profile(ascent_rate, burst_altitude, descent_rate,
     else:
         dt_ascent = dt
 
+
     if descent_rate <= 0.5:
         dt_descent = dt * math.floor(1.0 / descent_rate)
     else:
@@ -227,7 +229,7 @@ def standard_profile(ascent_rate, burst_altitude, descent_rate,
 
     return ((model_up, term_up, dt_ascent), (model_down, term_down, dt_descent))
 
-
+@newrelic.agent.function_trace()
 def float_profile(ascent_rate, float_altitude, stop_time, dataset, warningcounts, dt=60.0, dt_float=1200.0):
     """Make a model chain for the typical floating balloon situation of ascent
        at constant altitude to a float altitude which persists for some
@@ -249,7 +251,7 @@ def float_profile(ascent_rate, float_altitude, stop_time, dataset, warningcounts
 
     return ((model_up, term_up, dt_ascent), (model_float, term_float, dt_float))
 
-
+@newrelic.agent.function_trace()
 def reverse_profile(ascent_rate, wind_dataset, elevation_dataset, warningcounts, dt=-60.0):
     """Make a model chain used to estimate a balloon's launch site location, based on
        the current position, and a known ascent rate. This model only works for a balloon
