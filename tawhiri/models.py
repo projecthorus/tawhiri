@@ -139,7 +139,14 @@ def make_elevation_data_termination(dataset=None):
        in `dataset` (which should be a ruaumoko.Dataset).
     """
     def tc(t, lat, lng, alt):
-        return (dataset.get(lat, lng) > alt) or (alt <= 0)
+        # Try and get the ground level out of a ruaumoko dataset.
+        try:
+            _gnd_level = dataset.get(lat, lng)
+        except:
+            # If this fails, just set this to 0.
+            _gnd_level = 0
+        
+        return (_gnd_level > alt) or (alt <= 0)
     return tc
 
 def make_time_termination(max_time):
@@ -186,7 +193,7 @@ def make_any_terminator(terminators):
 
 
 def standard_profile(ascent_rate, burst_altitude, descent_rate,
-                     wind_dataset, elevation_dataset, warningcounts):
+                     wind_dataset, elevation_dataset, warningcounts, dt=60.0):
     """Make a model chain for the standard high altitude balloon situation of
        ascent at a constant rate followed by burst and subsequent descent
        at terminal velocity under parachute with a predetermined sea level
@@ -206,10 +213,22 @@ def standard_profile(ascent_rate, burst_altitude, descent_rate,
                                     make_wind_velocity(wind_dataset, warningcounts)])
     term_down = make_elevation_data_termination(elevation_dataset)
 
-    return ((model_up, term_up), (model_down, term_down))
+    # Scale the time-step based on ascent/descent rate if we have been provided
+    # a very slow rate.
+    if ascent_rate <= 0.5:
+        dt_ascent = dt * math.floor(1.0 / ascent_rate)
+    else:
+        dt_ascent = dt
+
+    if descent_rate <= 0.5:
+        dt_descent = dt * math.floor(1.0 / descent_rate)
+    else:
+        dt_descent = dt
+
+    return ((model_up, term_up, dt_ascent), (model_down, term_down, dt_descent))
 
 
-def float_profile(ascent_rate, float_altitude, stop_time, dataset, warningcounts):
+def float_profile(ascent_rate, float_altitude, stop_time, dataset, warningcounts, dt=60.0, dt_float=1200.0):
     """Make a model chain for the typical floating balloon situation of ascent
        at constant altitude to a float altitude which persists for some
        amount of time before stopping. Descent is in general not modelled.
@@ -221,10 +240,17 @@ def float_profile(ascent_rate, float_altitude, stop_time, dataset, warningcounts
     model_float = make_wind_velocity(dataset, warningcounts)
     term_float = make_time_termination(stop_time)
 
-    return ((model_up, term_up), (model_float, term_float))
+    # Scale the time-step based on ascent/descent rate if we have been provided
+    # a very slow rate.
+    if ascent_rate <= 0.5:
+        dt_ascent = dt * math.floor(1.0 / ascent_rate)
+    else:
+        dt_ascent = dt
+
+    return ((model_up, term_up, dt_ascent), (model_float, term_float, dt_float))
 
 
-def reverse_profile(ascent_rate, wind_dataset, elevation_dataset, warningcounts):
+def reverse_profile(ascent_rate, wind_dataset, elevation_dataset, warningcounts, dt=-60.0):
     """Make a model chain used to estimate a balloon's launch site location, based on
        the current position, and a known ascent rate. This model only works for a balloon
        on ascent.
@@ -244,4 +270,4 @@ def reverse_profile(ascent_rate, wind_dataset, elevation_dataset, warningcounts)
                                     make_wind_velocity(wind_dataset, warningcounts)])
     term_down = make_elevation_data_termination(elevation_dataset)
 
-    return ((model_up, term_up), (model_down, term_down))
+    return ((model_up, term_up, dt), (model_down, term_down, dt))
